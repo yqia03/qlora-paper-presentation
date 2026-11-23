@@ -1,0 +1,409 @@
+1
+00:00:00,250 --> 00:00:05,800
+How do you fit 130 gigabytes of weights on a 48-gigabyte GPU?
+一张 48 GB 显卡，怎么装下 130 GB 的权重？
+
+2
+00:00:06,150 --> 00:00:11,600
+At 16 bits, each of those 65 billion weights takes two bytes.
+650 亿个权重，每个用 16 位存储，也就是两个字节。
+
+3
+00:00:11,850 --> 00:00:17,650
+That was the challenge Dettmers and his colleagues took on with QLoRA.
+Dettmers 等人用 QLoRA 应对的，正是这个难题。
+
+4
+00:00:18,400 --> 00:00:24,150
+Read both lengths on the same scale. Each gigabyte is a billion bytes.
+用同一把尺量这两段长度。每 GB 是十亿字节。
+
+5
+00:00:24,700 --> 00:00:31,140
+The full set of weights reaches 130 gigabytes on that scale.
+沿着这把尺看，全部权重占到 130 GB。
+
+6
+00:00:31,600 --> 00:00:37,010
+Trace back to 48 gigabytes. That's how much the card can hold.
+往回看到 48 GB，这就是显卡的容量上限。
+
+7
+00:00:37,600 --> 00:00:42,220
+That leaves 82 gigabytes of weights still to load.
+显存装满之后，还剩 82 GB 的权重没装进去。
+
+8
+00:00:43,250 --> 00:00:47,350
+What else needs memory during training?
+训练时，还有什么要占用显存？
+
+9
+00:00:48,000 --> 00:00:53,090
+Full fine-tuning keeps intermediate activations for the backward pass.
+全参数微调还要保存中间激活值，供反向传播使用。
+
+10
+00:00:53,900 --> 00:00:58,450
+It also needs gradients and optimizer state to update the weights.
+更新权重还需要梯度和优化器状态。
+
+11
+00:00:59,000 --> 00:01:01,660
+Can we shrink the weights?
+能把权重压小一些吗？
+
+12
+00:01:03,200 --> 00:01:09,690
+At four bits per weight, the 65 billion codes take about 32.5 gigabytes.
+每个权重用 4 位编码，650 亿个编码约占 32.5 GB。
+
+13
+00:01:10,300 --> 00:01:15,350
+The codes fit. The scales, activations and adapter still need space.
+权重编码装得下了。尺度、激活值和适配器还需要空间。
+
+14
+00:01:16,350 --> 00:01:18,820
+What learns if we freeze the base?
+如果冻结基座，哪些参数还会学习？
+
+15
+00:01:20,200 --> 00:01:25,150
+Pull out one layer. The same input feeds both paths.
+取出其中一层。同一个输入分别送入两条路径。
+
+16
+00:01:25,700 --> 00:01:31,150
+The upper path decodes the frozen four-bit weights into BF16 for computation.
+上路把冻结的 4 位权重解量化为 BF16，再做计算。
+
+17
+00:01:31,700 --> 00:01:36,620
+In the trainable adapter, A compresses the input and B expands it.
+在可训练的低秩适配器中，A 把输入投影到低维，B 再把它映射到输出维度。
+
+18
+00:01:36,700 --> 00:01:38,920
+Add the two outputs together.
+最后，两路输出相加。
+
+19
+00:01:40,150 --> 00:01:44,110
+Try this toy layer with the input vector two, one.
+在这个单层示例中，输入向量是 [2, 1]。
+
+20
+00:01:45,000 --> 00:01:49,450
+With scale one, A simply picks the first entry, two.
+缩放取 1，A 选取输入的第一项，也就是 2。
+
+21
+00:01:50,000 --> 00:01:54,650
+B starts at zero. Add zero to the base output, three.
+B 初始为 0。基座输出 3，加上 0 仍是 3。
+
+22
+00:01:55,200 --> 00:02:00,200
+During training, the prediction error sends a gradient back through the layer.
+训练时，预测误差产生的梯度沿这一层反向传播。
+
+23
+00:02:01,000 --> 00:02:04,660
+Say the update takes B from zero to one half.
+假设这次更新把 B 从 0 变为 0.5。
+
+24
+00:02:06,000 --> 00:02:10,490
+Keep the original input and the frozen base exactly as they were.
+保留相同的输入，冻结基座的权重也保持原值。
+
+25
+00:02:12,000 --> 00:02:16,330
+Send that input through again. The upper path still gives three.
+同一输入再算一次，上路仍然得到 3。
+
+26
+00:02:17,000 --> 00:02:21,240
+Below, one half times two gives a correction of one.
+下路用 0.5 乘以 2，得到修正量 1。
+
+27
+00:02:22,200 --> 00:02:25,220
+Three plus one brings the output to four.
+3 加 1，总输出变为 4。
+
+28
+00:02:26,000 --> 00:02:28,720
+Now look inside the frozen weights.
+再仔细看看冻结的权重。
+
+29
+00:02:30,200 --> 00:02:35,700
+Four bits give us sixteen possible codes. Which values should they represent?
+4 位可表示 16 个编号。这些编号应当对应哪些数值？
+
+30
+00:02:36,250 --> 00:02:41,080
+The authors designed NormalFloat 4, or NF4, for bell-shaped weight distributions.
+作者设计了 NormalFloat 4，简称 NF4，用来表示近似钟形分布的权重。
+
+31
+00:02:42,250 --> 00:02:46,850
+Near zero, weights cluster together. NF4 puts its ticks closer together there.
+权重集中在零附近，NF4 在这一带也安排了更密的刻度。
+
+32
+00:02:47,400 --> 00:02:50,640
+Farther from zero, the ticks spread out.
+离零越远，刻度间距越大。
+
+33
+00:02:51,200 --> 00:02:56,070
+In our example, the largest weight magnitude is two. That's our block scale.
+在这个教学示例中，权重的最大绝对值是 2，这就是组尺度。
+
+34
+00:02:57,400 --> 00:03:02,020
+Pick one weight, 0.36, and divide it by two.
+取出一个权重 0.36，除以 2。
+
+35
+00:03:02,600 --> 00:03:07,000
+Now place 0.18 on the normalized number line.
+把得到的 0.18 放到归一化数轴上。
+
+36
+00:03:08,000 --> 00:03:15,500
+Which of the two nearby levels is closest to 0.18?
+相邻的两个刻度，哪个离 0.18 最近？
+
+37
+00:03:15,500 --> 00:03:18,980
+The closest level is about 0.161.
+最近的刻度约为 0.161。
+
+38
+00:03:19,300 --> 00:03:22,530
+Its four-bit code is 1001.
+它的四位编号是 1001。
+
+39
+00:03:23,200 --> 00:03:28,330
+To recover the weight, look up this code in the codebook.
+要还原权重，先在码本里查这个编号。
+
+40
+00:03:29,700 --> 00:03:35,800
+That gives about 0.161. Now multiply by the scale, two.
+查得约 0.161。再乘回组尺度 2。
+
+41
+00:03:36,350 --> 00:03:41,660
+That gives about 0.322. We started with 0.36.
+结果约为 0.322。原来的权重是 0.36。
+
+42
+00:03:42,200 --> 00:03:47,430
+The gap is the rounding error. Recovering even this one weight took a scale.
+两者之差是舍入误差。即使只还原这一个权重，也用到了组尺度。
+
+43
+00:03:50,200 --> 00:03:55,760
+How much memory do the scales take? Each block of 64 weights shares one.
+尺度要占多少显存？每 64 个权重共享一个尺度。
+
+44
+00:03:56,650 --> 00:04:03,030
+Give each scale 32 bits. Spread that cost over the 64 weights that use it.
+每个尺度占 32 位，这项开销分摊给组里的 64 个权重。
+
+45
+00:04:04,000 --> 00:04:07,630
+That adds half a bit to every weight, on average.
+平均下来，每个权重还要多占半位。
+
+46
+00:04:09,200 --> 00:04:14,090
+With double quantization, the scales themselves get quantized.
+双重量化会把尺度本身也量化。
+
+47
+00:04:15,400 --> 00:04:20,120
+First, center the scales and quantize each one to eight bits.
+先将这些尺度中心化，再把每个尺度量化为 8 位。
+
+48
+00:04:21,400 --> 00:04:26,750
+A group of 256 scales then shares a second, higher-level scale.
+每 256 个尺度再共享一个更高一级的尺度。
+
+49
+00:04:27,300 --> 00:04:34,100
+Scales now cost about 0.127 bits per weight, saving about 0.37 bits on average.
+现在尺度开销约为每个权重 0.127 位，平均每个权重节省约 0.37 位。
+
+50
+00:04:35,250 --> 00:04:40,430
+Even with the weights in place, a long sequence can strain GPU memory.
+即使权重已装入显存，较长的序列仍可能带来显存压力。
+
+51
+00:04:41,950 --> 00:04:47,800
+Watch the temporary buffer grow. The orange page, P1, holds optimizer state.
+看临时缓冲区变大。橙色的 P1 页存着优化器状态。
+
+52
+00:04:49,950 --> 00:04:54,990
+As GPU memory fills up, P1 moves into host RAM.
+显存吃紧时，P1 移入主机内存。
+
+53
+00:04:56,600 --> 00:05:02,610
+The buffer shrinks. When the update needs P1, the same page returns to the GPU.
+缓冲区缩小。更新需要 P1 时，同一页回到 GPU。
+
+54
+00:05:05,050 --> 00:05:09,650
+Four-bit codes and compressed scales reduce the memory the weights occupy.
+4 位编码和压缩后的尺度，减少了存放权重所需的显存。
+
+55
+00:05:10,200 --> 00:05:15,840
+Paging covers the temporary peak. Together, those savings make room for training.
+分页应对暂时的峰值。这几项节省为训练腾出了空间。
+
+56
+00:05:16,000 --> 00:05:20,940
+The authors fine-tuned a 65-billion-parameter model on one 48 GB card.
+作者用一张 48 GB 显卡微调了一个 650 亿参数的模型。
+
+57
+00:05:21,200 --> 00:05:27,190
+When the base weights use four bits, what happens to accuracy?
+基座权重换成四位后，模型的准确率会怎样？
+
+58
+00:05:27,800 --> 00:05:34,520
+The authors used LLaMA models with 7, 13, 33, and 65 billion parameters.
+作者测试了 70 亿、130 亿、330 亿和 650 亿参数的 LLaMA 模型。
+
+59
+00:05:34,600 --> 00:05:40,790
+For each size, they fine-tuned adapters on Alpaca and, separately, on FLAN v2.
+每种规模都分别用 Alpaca 和 FLAN v2 微调适配器。
+
+60
+00:05:41,000 --> 00:05:43,290
+That gives eight settings in all.
+四种规模乘以两个数据集，共八组设置。
+
+61
+00:05:44,200 --> 00:05:49,060
+After fine-tuning, the authors tested each model on MMLU.
+微调结束后，作者用 MMLU 测试每个模型。
+
+62
+00:05:49,800 --> 00:05:55,450
+Five-shot means the prompt gives five examples before asking the test question.
+五样本表示，提示中先给出五个示例，再提出测试问题。
+
+63
+00:05:56,000 --> 00:06:00,140
+The score is the percentage of questions answered correctly.
+分数是模型答对题目的百分比。
+
+64
+00:06:01,200 --> 00:06:05,400
+Read down a column to hold size and training data fixed.
+沿着同一列读，模型规模和训练数据都保持一致。
+
+65
+00:06:06,300 --> 00:06:11,280
+Here is Table 3. The far-right column averages the eight settings.
+这是论文表 3。最右列给出八组设置的平均值。
+
+66
+00:06:12,450 --> 00:06:18,980
+With a BF16 base and trained adapters, mean accuracy is 53.0%.
+用 BF16 基座微调适配器，平均准确率为 53.0%。
+
+67
+00:06:19,300 --> 00:06:25,020
+With NF4 and double quantization, the corresponding mean is 53.1%.
+换成 NF4 加双重量化，对应的平均值为 53.1%。
+
+68
+00:06:25,400 --> 00:06:31,083
+The middle row, Float4, averages 52.2%. How do individual settings compare?
+中间一行 Float4 的平均值是 52.2%。具体到每组设置，结果又如何？
+
+69
+00:06:32,033 --> 00:06:38,083
+Find the seven-billion-parameter model fine-tuned on FLAN v2.
+先看用 FLAN v2 微调的 70 亿参数模型。
+
+70
+00:06:38,633 --> 00:06:44,483
+The BF16 base scores 45.6%. Now read down one column.
+BF16 基座得到 45.6%。沿着同一列往下看。
+
+71
+00:06:45,033 --> 00:06:51,303
+NF4 with double quantization scores 44.5%, down 1.1 percentage points.
+NF4 加双重量化得到 44.5%，低了 1.1 个百分点。
+
+72
+00:06:51,833 --> 00:06:56,543
+What happens if we keep the training data and change the model size?
+如果用同一份微调数据，只改变模型规模呢？
+
+73
+00:06:57,133 --> 00:07:02,933
+Follow the same FLAN v2 header over to the 65-billion-parameter model.
+沿着 FLAN v2 的表头，找到 650 亿参数的模型。
+
+74
+00:07:03,483 --> 00:07:07,533
+The BF16 row reads 62.5%.
+BF16 这一行是 62.5%。
+
+75
+00:07:07,833 --> 00:07:12,208
+With NF4 and double quantization, it's 63.9%.
+换成 NF4 加双重量化，准确率是 63.9%。
+
+76
+00:07:12,458 --> 00:07:21,828
+That's a gain of 1.4 percentage points. On the same training data, the two sizes show opposite changes in accuracy.
+这次高了 1.4 个百分点。用同一份数据微调，两个规模的模型准确率一降一升。
+
+77
+00:07:22,958 --> 00:07:27,508
+QLoRA keeps the base in four bits and trains the adapter.
+QLoRA 用 4 位存储基座权重，训练的是适配器。
+
+78
+00:07:27,608 --> 00:07:34,358
+The authors fine-tuned a 65-billion-parameter model on one 48-gigabyte GPU.
+作者用一张 48 GB 显卡，微调了一个 650 亿参数的模型。
+
+79
+00:07:34,508 --> 00:07:38,208
+The two five-shot MMLU averages were close.
+两种方法的 5-shot MMLU 平均准确率很接近。
+
+80
+00:07:38,258 --> 00:07:41,758
+BF16 averaged 53.0 percent.
+BF16 的平均准确率是 53.0%。
+
+81
+00:07:41,808 --> 00:07:48,075
+NF4 with double quantization averaged 53.1 percent across the same eight settings.
+在相同的八组设置下，NF4 加双重量化的平均准确率是 53.1%。
+
+82
+00:07:48,125 --> 00:07:50,125
+Thank you for watching.
+感谢观看。

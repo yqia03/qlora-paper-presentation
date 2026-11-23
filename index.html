@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8f5ec">
+  <title>QLoRA · CS5494 Paper Presentation</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="shared.css">
+  <link rel="stylesheet" href="site.css">
+</head>
+<body data-picture-holds='[[319.75, 1.0], [389.0, 0.8333333333333334], [429.0, 1.125], [463.75, 1.1666666666666667]]'>
+  <header class="mast"><span class="course">CS5494</span><span>Topics in Generative AI</span><a href="#inside">Key moments ↓</a></header>
+  <main>
+    <section class="hero" aria-labelledby="title">
+      <div class="paper">
+        <p class="venue">NeurIPS 2023</p>
+        <h1 id="title">QLoRA</h1>
+        <p class="subtitle">Efficient Finetuning of Quantized LLMs</p>
+        <p class="authors">Tim Dettmers, Artidoro Pagnoni,<br>Ari Holtzman, and Luke Zettlemoyer</p>
+        <a class="paper-link" href="https://proceedings.neurips.cc/paper_files/paper/2023/file/1feb87871436031bdc0f2beaa62a049b-Paper-Conference.pdf#page=6">Read the paper <span aria-hidden="true">↗</span></a>
+      </div>
+      <div class="player" id="player">
+        <video aria-label="QLoRA paper presentation" controls playsinline preload="metadata" poster="opening.jpg" src="presentation.mp4"></video>
+        <div class="player-meta"><span>Presentation · Final film</span><span><span id="elapsed">00:00</span> / <span id="duration">--:--</span></span></div>
+        <div id="captions" class="captions" aria-label="Bilingual captions" hidden>
+          <template id="caption-pair">
+            <div class="caption-pair"><p lang="en"></p><p lang="zh-Hans"></p></div>
+          </template>
+        </div>
+      </div>
+    </section>
+    <section class="figures" aria-label="Current figure">
+      <figure data-start="80" data-end="100" hidden>
+        <figcaption><p class="venue">Mechanism</p><h2>One input, two paths</h2></figcaption>
+        <div class="flow">
+          <div class="branch"><b>Frozen base</b><span>4-bit W → BF16 → Wx</span></div>
+          <div class="branch train"><b>Trainable adapter</b><span>x → A → B → sB(Ax)</span></div>
+          <p class="sum">y = Wx + sB(Ax)</p>
+        </div>
+      </figure>
+      <figure data-start="100" data-end="150" hidden>
+        <figcaption><p class="venue">Teaching example</p><h2>One adapter update</h2><p>Same input x = [2, 1] · Scale s = 1</p></figcaption>
+        <table class="adapter">
+          <thead><tr><th scope="col">Path</th><th scope="col">Before</th><th scope="col">After one step</th></tr></thead>
+          <tbody>
+            <tr class="base"><th scope="row">Frozen base</th><td><span data-from="103.6">3</span></td><td><span data-from="133">3</span></td></tr>
+            <tr class="train"><th scope="row">Adapter</th><td><span data-from="109.5">0 × 2 = 0</span></td><td><span data-from="137.7">0.5 × 2 = 1</span></td></tr>
+            <tr class="total"><th scope="row">Output</th><td><span data-from="110.7">3</span></td><td><span data-from="142.9">4</span></td></tr>
+          </tbody>
+        </table>
+      </figure>
+      <figure data-start="150" data-end="188" hidden>
+        <figcaption><p class="venue">NormalFloat 4</p><h2>Sixteen levels for four bits</h2></figcaption>
+        <div>
+          <div class="scale full-scale" role="img" aria-label="NF4 levels between minus one and one, spaced more closely near zero"></div>
+          <div class="scale-limits"><span>−1</span><span>0</span><span>1</span></div>
+          <p class="calc" data-from="181.5">0.36 ÷ 2 = <strong>0.18</strong></p>
+        </div>
+      </figure>
+      <figure data-start="188" data-end="230" hidden>
+        <figcaption><p class="venue">Teaching example</p><h2>Find the NF4 level</h2><p>Normalized weight · 0.36 ÷ 2 = 0.18</p></figcaption>
+        <div>
+          <div class="scale zoom-scale" role="group" aria-label="Detail of the NF4 number line from zero to 0.25. The diamond marks the normalized weight 0.18.">
+            <span class="weight">0.18</span>
+            <span class="nearest" data-from="195.5">0.161</span>
+          </div>
+          <div class="scale-limits"><span>0</span><span>0.25</span></div>
+          <div class="decode">
+            <p data-from="199.3">Stored code <strong>1001</strong></p>
+            <p data-from="211.7">Recovered weight <strong>0.161 × 2 ≈ 0.322</strong></p>
+          </div>
+        </div>
+      </figure>
+      <figure data-start="365.3" data-return-to-mean="440" hidden>
+        <figcaption><p class="venue">Table 3 · NeurIPS 2023</p><h2>5-shot MMLU test accuracy</h2><p>For LLaMA adapters, scores are percentages. The video’s rightmost Mean column is the bottom <strong>Mean (8)</strong> row here. For each setup column in the video, find the row with the same name and compare across it.</p>
+          <a class="source" href="https://proceedings.neurips.cc/paper_files/paper/2023/file/1feb87871436031bdc0f2beaa62a049b-Paper-Conference.pdf#page=6">Dettmers et al., page 6 ↗</a>
+        </figcaption>
+        <table aria-label="Table 3, LLaMA 5-shot MMLU test accuracy in percent" class="results">
+          <thead><tr><th scope="col">Model · data</th><th scope="col">BF16</th><th scope="col">Float4</th><th scope="col">NF4 + DQ</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">7B · Alpaca</th><td>38.4</td><td>37.2</td><td>39.0</td></tr>
+            <tr data-focus="7B"><th scope="row">7B · FLAN v2</th><td>45.6</td><td>44.0</td><td>44.5</td></tr>
+            <tr><th scope="row">13B · Alpaca</th><td>47.2</td><td>47.3</td><td>47.5</td></tr>
+            <tr><th scope="row">13B · FLAN v2</th><td>50.6</td><td>50.0</td><td>50.7</td></tr>
+            <tr><th scope="row">33B · Alpaca</th><td>57.7</td><td>55.9</td><td>57.3</td></tr>
+            <tr><th scope="row">33B · FLAN v2</th><td>60.5</td><td>58.5</td><td>59.2</td></tr>
+            <tr><th scope="row">65B · Alpaca</th><td>61.8</td><td>61.3</td><td>61.8</td></tr>
+            <tr data-focus="65B"><th scope="row">65B · FLAN v2</th><td>62.5</td><td>63.3</td><td>63.9</td></tr>
+          </tbody>
+          <tfoot><tr data-focus="mean"><th scope="row">Mean (8)</th><td>53.0</td><td>52.2</td><td>53.1</td></tr></tfoot>
+        </table>
+      </figure>
+    </section>
+    <section class="moments" aria-labelledby="inside">
+      <h2 id="inside">Inside the presentation</h2>
+      <div class="chapters">
+        <button type="button" data-seek="100"><time datetime="PT1M40S">01:40</time><span>One adapter update</span><i aria-hidden="true">↗</i></button>
+        <button type="button" data-seek="188"><time datetime="PT3M8S">03:08</time><span>Find the NF4 level</span><i aria-hidden="true">↗</i></button>
+        <button type="button" data-seek="366.3"><time datetime="PT6M6.3S">06:06.3</time><span>Read Table 3</span><i aria-hidden="true">↗</i></button>
+      </div>
+      <p><a href="qlora-final-bilingual.srt" download>Bilingual SRT</a></p>
+    </section>
+  </main>
+  <script src="captions.js"></script>
+  <script src="player.js"></script>
+</body>
+</html>

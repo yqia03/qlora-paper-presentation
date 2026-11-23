@@ -1,0 +1,20 @@
+@font-face {
+  font-family: 'Instrument Serif';
+  src: url('fonts/InstrumentSerif.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face {
+  font-family: Inter;
+  src: url('fonts/Inter.ttf') format('truetype');
+  font-weight: 100 900;
+  font-display: swap;
+}
+:root {
+  --paper: #f8f5ec;
+  --ink: #202925;
+  --frozen: #476273;
+  --adapter: #b34f2c;
+  --rule: #cec9ba;
+  --serif: 'Instrument Serif', Georgia, serif;
+  --sans: Inter, 'PingFang SC', sans-serif;
+}
