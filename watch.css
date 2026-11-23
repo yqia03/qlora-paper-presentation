@@ -22,9 +22,9 @@ body { margin: 0; background: var(--paper); color: var(--ink); font: 400 16px/1.
 .watch-heading { padding: clamp(24px, 2.6vw, 44px) 0 clamp(21px, 2.1vw, 35px); }
 .watch-venue, .watch-kicker { color: var(--adapter); font: 650 11px/1.25 var(--sans); letter-spacing: .09em; text-transform: uppercase; }
 .watch-venue span { color: #a39b88; margin-inline: 5px; }
-#watch h1 { display: flex; align-items: center; gap: clamp(20px, 2.6vw, 44px); margin-block: 6px 9px; font-family: var(--serif); font-weight: 400; }
+#watch h1 { display: flex; flex-wrap: wrap; align-items: center; gap: clamp(20px, 2.6vw, 44px); margin-block: 6px 9px; font-family: var(--serif); font-weight: 400; }
 .watch-acronym { font-size: clamp(72px, 7.6vw, 122px); line-height: .94; letter-spacing: -.055em; }
-.watch-full-title { padding-left: clamp(20px, 2.6vw, 44px); border-left: 1px solid var(--rule); font-size: clamp(28px, 2.65vw, 45px); line-height: .98; letter-spacing: -.025em; }
+.watch-full-title { padding-left: clamp(20px, 2.6vw, 44px); border-left: 1px solid var(--rule); font-size: clamp(28px, 2.65vw, 45px); line-height: .98; letter-spacing: -.025em; white-space: nowrap; }
 .watch-authors { color: #4c5750; font-size: 13px; line-height: 1.45; }
 .watch-layout { display: grid; grid-template-columns: minmax(0, 2.45fr) minmax(270px, 1fr); gap: clamp(22px, 2.5vw, 44px); }
 .watch-player { min-width: 0; }
@@ -105,6 +105,10 @@ body { margin: 0; background: var(--paper); color: var(--ink); font: 400 16px/1.
   .watch-mini { width: 54px; }
   .watch-cues { height: 335px; }
 }
+@media (max-width: 670px) {
+  #watch h1 { flex-direction: column; align-items: flex-start; gap: 5px; }
+  .watch-full-title { padding-left: 0; border-left: 0; font-size: clamp(16px, 5.45vw, 28px); }
+}
 @media (max-width: 560px) {
   .watch-mast-inner { padding-block: 12px; gap: 8px; }
   .watch-course { gap: 7px; }
@@ -113,11 +117,8 @@ body { margin: 0; background: var(--paper); color: var(--ink); font: 400 16px/1.
   .watch-mast nav { gap: 10px; }
   .watch-mast nav a { font-size: 11px; }
   .watch-heading { padding: 21px 0 18px; }
-  #watch h1 { gap: 15px; margin-block: 8px; }
+  #watch h1 { margin-block: 8px; }
   .watch-acronym { font-size: clamp(54px, 14vw, 76px); }
-  .watch-full-title { padding-left: 13px; font-size: clamp(21px, 5.4vw, 30px); }
-  .watch-full-title { text-wrap: balance; }
-  .watch-title-break { display: none; }
   .watch-authors { font-size: 11px; }
   .watch-player-meta { margin-top: 6px; font-size: 11px; }
   #watch-figures figure { grid-template-columns: 1fr; gap: 9px; }
